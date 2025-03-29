@@ -1,0 +1,364 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//---------------------- auth tables ----------------------//
+
+model User {
+  id       String  @id @default(uuid())
+  email    String  @unique
+  name     String?
+  password String
+
+  refreshTokens RefreshToken?
+  subscriptions Subscription[]
+
+  preferences Preference[]
+  notes       Note[]
+  favorites   Favorite[]
+  Progress    Progress?
+
+  createdAt DateTime @default(now())
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String   @unique //making userId unique enforces signel device login only to prevent account sharing. 
+  token     String   @unique
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+//---------------------- shared tables ----------------------//
+
+model Note {
+  id     String @id @default(uuid())
+  userId String
+
+  cardId  String?
+  examId  String?
+  content String
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  User      User     @relation(fields: [userId], references: [id])
+}
+
+enum FavoriteType {
+  CARD_2B // 2B Course cards
+  CASE_2B // 2B Course cases
+  LONG_CASE // 2B Long Case Exam Bank
+  VIVA_CASE //2b viva question
+  RAPID // 2B Rapid Reporting Bank
+
+  CARD_2A // 2a card
+  MCQ_2A // Step 1, Step 2A MCQs
+  ALGORITHM_2A
+
+  CARD_ANATOMY //  step 1 anatomy card
+  CARD_PHYSICS // step 1 physics card
+  IMAGE // Step 1 Image Bank . I might add an image table for step 1 anatomy later
+}
+
+model Favorite {
+  id     String @id @default(uuid())
+  userId String
+
+  type       FavoriteType
+  providerId String // Stores either a course or bank ID
+  targetId   String // The favorited item (card, case, MCQ, etc.)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, type]) // Indexing for faster retrieval
+}
+
+enum PreferenceKey {
+  DARK_MODE
+  SIDEBAR_POSITION
+  AUTOBILLING //  Store Stripe auto-renew setting here too
+
+  MODE_2B_COURSE
+}
+
+model Preference {
+  id     String @id @default(uuid())
+  userId String
+
+  productId String? // Nullable in case the preference is global
+  key       PreferenceKey // ENUM for easier querying
+  value     Json // Store structured settings (booleans, numbers, etc.)
+
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+//---------------------- products tables ----------------------//
+
+enum StepLevel {
+  STEP_1
+  STEP_2A
+  STEP_2B
+}
+
+enum ContentType {
+  COURSE
+  EXAM_BANK
+}
+
+enum SubscriptionStatus {
+  ACTIVE_INITIAL
+  ACTIVE_MONTHLY
+  CANCELED
+  EXPIRED
+}
+
+model Product {
+  id          String           @id @default(uuid())
+  title       String
+  description String?
+  step        StepLevel
+  contentType ContentType
+  packages    PackageProduct[]
+}
+
+model Package {
+  id            String           @id @default(uuid())
+  title         String
+  description   String?
+  price         Float // The price the user pays
+  renewalCost   Float // Monthly renewal cost
+  duration      Int // Initial access period (e.g., 3 months, 6 months) ie stripe paid trial
+  products      PackageProduct[]
+  subscriptions Subscription[]
+}
+
+model PackageProduct {
+  packageId String
+  productId String
+  package   Package @relation(fields: [packageId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@id([packageId, productId])
+}
+
+model Subscription {
+  id        String             @id @default(uuid())
+  userId    String
+  packageId String
+  status    SubscriptionStatus @default(ACTIVE_INITIAL)
+
+  stripeSubscriptionId String? // Link to Stripe subscription
+  stripeCustomerId     String? // Link to Stripe customer
+
+  startDate        DateTime  @default(now())
+  initialPeriodEnd DateTime
+  nextBillingDate  DateTime?
+  subscriptionEnd  DateTime?
+
+  renewalCost Float
+  autoRenew   Boolean @default(true) // ✅ NEW: Tracks auto-billing preference
+
+  user    User    @relation(fields: [userId], references: [id])
+  package Package @relation(fields: [packageId], references: [id])
+}
+
+//---------------------- content tables ----------------------//
+
+model Lesson {
+  id       String @id @default(uuid())
+  courseId String // relates to a Product with contentType = COURSE
+
+  order       Int // ordering in the course
+  orderString String // for the visuals only for example lesson number 1 would have a string of "Lesson 1"
+  week        Int // which week the lesson is part of
+  module      String
+
+  metadata    Json? // currently nothing here, but for later if i want to add something
+  title       String // the title
+  description String? // if any
+
+  cards               Card[] //its cards
+  tips                Json? // tips at te end of the lesson if any
+  additionalResources Json? // additional resources at te end of the lesson if any
+  Quiz                Quiz?
+
+  @@index([courseId]) // Added index for faster course lesson queries
+}
+
+model Quiz {
+  id       String @id @default(uuid())
+  lessonId String @unique // One quiz per lesson
+  courseId String
+
+  questions Json // Array of questions, could be an MCQ format or free text
+  metadata  Json? // Any quiz-specific settings
+
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+
+  @@index([courseId]) // Added index for course-level quiz queries
+}
+
+enum CardType {
+  disease_Card
+  approach
+}
+
+model Card {
+  id       String @id @default(uuid())
+  lessonId String
+
+  type    CardType
+  order   Int
+  module  String // i added this here also so that if i want to query by module. is it redundant?
+  title   String
+  content Json // would contain subtitle, description, lists, and background info section.
+
+  // For more detailed linking to cases if needed:
+  cases  Case[]
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+
+  @@index([lessonId]) // Added index for faster lesson card queries
+}
+
+model Case {
+  id     String @id @default(uuid())
+  cardId String
+
+  order     Int
+  title     String
+  module    String // i added this here also so that if i want to query by module. is it redundant?
+  metadata  Json? // currently nothing here, but for later if i want to add something
+  viva      Boolean? //specific for the 2b course
+  rapids    Boolean? //specific for the 2b course
+  longs     Boolean? //specific for the 2b course
+  highYield Boolean? //specific for the 2b course
+  images    Json
+  content   Json // would be an array of text strings probably or perhaps an object
+
+  card Card @relation(fields: [cardId], references: [id])
+
+  @@index([cardId]) // Added index for faster card case queries
+}
+
+model Exam {
+  id     String @id @default(uuid())
+  bankId String
+
+  order     Int
+  content   Json //desdescription  and exam specific tips and tricks
+  questions Question[]
+
+  @@index([bankId]) // Added index for faster bank exam queries
+}
+
+model Question {
+  id     String @id @default(uuid())
+  examId String
+
+  content Json // contains the question body, the possible answers if MCQ and the model answer
+  images  Json? // similar to the case model, a link to an external protected S3 bucket image(s)
+
+  exam Exam @relation(fields: [examId], references: [id])
+
+  @@index([examId]) // Added index for faster exam question queries
+}
+
+//---------------------- progress tables ----------------------//
+
+model Progress {
+  id     String @id @default(uuid())
+  userId String @unique
+
+  lessonProgress   LessonProgress[]
+  caseProgress     CaseProgress[]
+  examAttempts     ExamAttempt[]
+  questionAttempts QuestionAttempt[]
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+enum QuizOrLesson {
+  QUIZ
+  LESSON
+}
+
+model LessonProgress {
+  id         String @id @default(uuid())
+  progressId String
+
+  courseId String // corresponds to the Product id (course)
+  lessonId String // corresponds to Lesson id
+  type     QuizOrLesson // quiz or a lesson, more enums maybe added later
+
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+
+  Progress Progress @relation(fields: [progressId], references: [id])
+
+  @@unique([progressId, courseId, lessonId])
+  @@index([courseId, completed])
+}
+
+model CaseProgress {
+  id         String @id @default(uuid())
+  progressId String
+
+  courseId String // corresponds to the Product id (course)
+  caseId   String // corresponds to case id that is being tracked
+
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+
+  Progress Progress @relation(fields: [progressId], references: [id])
+
+  @@unique([progressId, courseId, caseId])
+  @@index([courseId, completed])
+}
+
+// need to add a relation between exam attempt and question attempt
+
+model ExamAttempt {
+  id         String @id @default(uuid())
+  progressId String
+
+  examBankId String // corresponds to a Product id (exam bank)
+  examId     String // identifier for the exam within the bank
+
+  score           Int
+  attemptedAt     DateTime @default(now())
+  durationSeconds Int // ✅ NEW: Tracks time spent
+
+  Progress Progress @relation(fields: [progressId], references: [id])
+
+  @@index([progressId, examBankId, examId, attemptedAt])
+}
+
+model QuestionAttempt {
+  id         String @id @default(uuid())
+  progressId String
+
+  examId     String // should match ExamAttempt.examId
+  questionId String // identifier for the question in the exam
+
+  correct         Boolean
+  attemptedAt     DateTime @default(now())
+  durationSeconds Int // ✅ NEW: Tracks time spent
+
+  Progress Progress @relation(fields: [progressId], references: [id])
+
+  @@index([progressId, examId, questionId])
+}
