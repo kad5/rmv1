@@ -9,6 +9,17 @@ const createNewUser = async (email, password, name) => {
   }
 };
 
+const createNewSocialUser = async (provider, providerId, email, name) => {
+  try {
+    return await prisma.user.create({
+      data: { provider, providerId, email, name },
+    });
+  } catch (error) {
+    console.log(error);
+    throw new Error("Database error: Unable to create new user");
+  }
+};
+
 const getUserById = async (userId) => {
   try {
     return await prisma.user.findUnique({ where: { id: userId } });
@@ -26,6 +37,19 @@ const getUserByEmail = async (email) => {
     throw new Error("Database error: Unable to fetch user");
   }
 };
+
+const getUserByProvider = async (provider, providerId) => {
+  try {
+    return await prisma.user.findUnique({
+      where: { provider_providerId: { provider, providerId } },
+    });
+  } catch (error) {
+    console.log(error);
+    throw new Error("Database error: Unable to find user");
+  }
+};
+
+/* ------------------- refresh token logic -------------------*/
 
 const addRefreshToken = async (userId, token) => {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -84,4 +108,6 @@ module.exports = {
   addRefreshToken,
   checkRefreshToken,
   deleteRefreshToken,
+  getUserByProvider,
+  createNewSocialUser,
 };
