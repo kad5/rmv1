@@ -25,7 +25,7 @@ passport.use(
         if (!user) {
           // check for email conflicts {someone already registerd with that same email the social uses}
           if (email) {
-            const existingUser = await getUserByEmail(email);
+            const existingUser = await queries.getUserByEmail(email);
             if (existingUser) {
               return done(null, false, { message: "Email already registered" });
             }
@@ -114,20 +114,30 @@ passport.use(
       clientSecret: process.env.TWITTER_CLIENT_SECRET,
       callbackURL: "/auth/twitter/callback",
       clientType: "confidential",
+      scope: ["email", "offline.access"],
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
         const providerId = profile.id;
         const name = profile.displayName || null;
-        // Note: Twitter doesn’t provide email by default
+        const email =
+          profile.emails && profile.emails[0] ? profile.emails[0].value : null;
 
         let user = await queries.getUserByProvider("TWITTER", providerId);
 
         if (!user) {
+          if (email) {
+            const existingUser = await queries.getUserByEmail(email);
+            if (existingUser) {
+              return done(null, false, {
+                message: "Email already registered",
+              });
+            }
+          }
           user = await queries.createNewSocialUser(
             "TWITTER",
             providerId,
-            null,
+            email,
             name
           );
         }

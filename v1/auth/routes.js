@@ -1,11 +1,13 @@
 const { Router } = require("express");
 const passport = require("../config/passport");
+const { loginLimiter, signupLimiter } = require("../config/rate-limit");
 const ctrl = require("./controller");
 const validate = require("./validation");
+
 const router = Router();
 
-router.post("/login", ctrl.loginEmail);
-router.post("/signup", ctrl.signupEmail);
+router.post("/login", loginLimiter, validate.login, ctrl.loginEmail);
+router.post("/signup", signupLimiter, validate.signup, ctrl.signupEmail);
 router.post("/logout", ctrl.logout);
 
 router.get(
@@ -14,21 +16,30 @@ router.get(
 );
 router.get(
   "/google/callback",
-  passport.authenticate("google", { failureRedirect: "/login" }),
+  passport.authenticate("google", {
+    failureRedirect: "/login",
+    failureMessage: true,
+  }),
   ctrl.authGoogle
 );
 
-app.get("/twitter", passport.authenticate("twitter"));
-app.get(
+router.get("/twitter", passport.authenticate("twitter"));
+router.get(
   "/twitter/callback",
-  passport.authenticate("twitter", { failureRedirect: "/login" }),
+  passport.authenticate("twitter", {
+    failureRedirect: "/login",
+    failureMessage: true,
+  }),
   ctrl.authTwitter
 );
 
 router.get("/apple", passport.authenticate("apple"));
 router.get(
   "/apple/callback",
-  passport.authenticate("apple", { failureRedirect: "/login" }),
+  passport.authenticate("apple", {
+    failureRedirect: "/login",
+    failureMessage: true,
+  }),
   ctrl.authApple
 );
 
