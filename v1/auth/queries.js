@@ -1,8 +1,15 @@
 const { prisma } = require("../config/prisma");
 
-const createNewUser = async (email, password, name) => {
+const createNewUser = async (
+  email,
+  password,
+  name = null,
+  provider = "EMAIL"
+) => {
   try {
-    return await prisma.user.create({ data: { email, password, name } });
+    return await prisma.user.create({
+      data: { email, password, name, provider },
+    });
   } catch (error) {
     console.log(error);
     throw new Error("Database error: Unable to create new user");

@@ -3,6 +3,9 @@ const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
+
+const router = require("./v1/v1router");
+
 const app = express();
 
 app.use(helmet());
@@ -25,6 +28,8 @@ app.use(
     credentials: true,
   })
 );
+
+app.use("/api/v1", router);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {

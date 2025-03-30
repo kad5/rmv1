@@ -68,9 +68,9 @@ const logout = asyncHandler(async (req, res) => {
   });
   return res.status(200).json({
     message: "Logged out successfully",
-    id: req.user.id,
-    email: req.user.email,
-    name: req.user.name,
+    id: req.user?.id,
+    email: req.user?.email,
+    name: req.user?.name,
   });
 });
 

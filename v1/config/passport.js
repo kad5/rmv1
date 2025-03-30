@@ -5,7 +5,7 @@ const AppleStrategy = require("passport-apple").Strategy;
 const TwitterStrategy =
   require("@superfaceai/passport-twitter-oauth2").Strategy;
 
-const queries = require("./queries");
+const queries = require("../auth/queries");
 
 passport.use(
   new GoogleStrategy(
