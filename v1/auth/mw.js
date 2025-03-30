@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const queries = require("./queries");
+const asyncHandler = require("express-async-handler");
 
 const ACCESS_SECRET = process.env.ACCESS_SECRET;
 const REFRESH_SECRET = process.env.REFRESH_SECRET;
@@ -65,7 +66,7 @@ const validateRefreshToken = async (req, res, next) => {
       });
       res.setHeader("x-new-access-token", accessToken);
 
-      req.user = decoded;
+      req.user = { id: decoded.userId };
       return next();
     });
   } catch (err) {
@@ -73,4 +74,34 @@ const validateRefreshToken = async (req, res, next) => {
   }
 };
 
-module.exports = { generateTokens, validateAccessToken };
+const protectedAccess = (productId) =>
+  asyncHandler(async (req, res, next) => {
+    const userId = req.user;
+    const subscriptions = await queries.getSubList(userId);
+
+    // Transform into a list of accessible products with end dates
+    const accessibleProducts = subscriptions.flatMap((sub) => {
+      const endDate = sub.subscriptionEnd;
+      return sub.package.products.map((pp) => ({
+        productId: pp.product.id,
+        subscriptionEnd: endDate,
+      }));
+    });
+    // Check if the requested product is accessible and still valid
+    const now = new Date();
+    const productAccess = accessibleProducts.find(
+      (ap) => ap.productId === productId
+    );
+
+    if (!productAccess || productAccess.subscriptionEnd < now) {
+      return res
+        .status(403)
+        .json({ message: "Access to this product has expired or is invalid" });
+    }
+
+    // Attach accessible products to req for downstream use
+    req.user.accessibleProducts = accessibleProducts;
+    next();
+  });
+
+module.exports = { generateTokens, validateAccessToken, protectedAccess };

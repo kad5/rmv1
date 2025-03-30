@@ -144,6 +144,7 @@ model Product {
   step        StepLevel
   contentType ContentType
   packages    PackageProduct[]
+  totalItems  Int? // Total lessons+quizes for COURSE, total exams for EXAM_BANK
 }
 
 model Package {
@@ -178,13 +179,15 @@ model Subscription {
   startDate        DateTime  @default(now())
   initialPeriodEnd DateTime
   nextBillingDate  DateTime?
-  subscriptionEnd  DateTime?
+  subscriptionEnd  DateTime
 
   renewalCost Float
   autoRenew   Boolean @default(true) // ✅ NEW: Tracks auto-billing preference
 
   user    User    @relation(fields: [userId], references: [id])
   package Package @relation(fields: [packageId], references: [id])
+
+  @@index([userId, status])
 }
 
 //---------------------- content tables ----------------------//
@@ -321,7 +324,7 @@ model LessonProgress {
   Progress Progress @relation(fields: [progressId], references: [id])
 
   @@unique([progressId, courseId, lessonId])
-  @@index([courseId, completed])
+  @@index([progressId, courseId])
 }
 
 model CaseProgress {
@@ -355,7 +358,8 @@ model ExamAttempt {
 
   Progress Progress @relation(fields: [progressId], references: [id])
 
-  @@index([progressId, examBankId, examId, attemptedAt])
+  @@index([progressId, examBankId])
+  @@index([progressId, examBankId, examId])
 }
 
 model QuestionAttempt {

@@ -56,6 +56,36 @@ const getUserByProvider = async (provider, providerId) => {
   }
 };
 
+const getSubList = async (userId) => {
+  try {
+    return prisma.subscription.findMany({
+      where: {
+        userId,
+        status: { in: ["ACTIVE_INITIAL", "ACTIVE_MONTHLY"] },
+      },
+      select: {
+        subscriptionEnd: true,
+        package: {
+          select: {
+            products: {
+              select: {
+                product: {
+                  select: {
+                    id: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    throw new Error("Database error: Unable to get products list");
+  }
+};
+
 /* ------------------- refresh token logic -------------------*/
 
 const addRefreshToken = async (userId, token) => {
@@ -112,6 +142,7 @@ module.exports = {
   createNewUser,
   getUserById,
   getUserByEmail,
+  getSubList,
   addRefreshToken,
   checkRefreshToken,
   deleteRefreshToken,
