@@ -8,7 +8,8 @@ const app = express();
 app.use(helmet());
 app.use((req, res, next) => {
   res.set({
-    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+    "Cache-Control":
+      "no-store, no-cache, must-revalidate, proxy-revalidate, , private",
     Pragma: "no-cache",
     Expires: "0",
     "Surrogate-Control": "no-store",

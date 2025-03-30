@@ -14,12 +14,21 @@ datasource db {
 }
 
 //---------------------- auth tables ----------------------//
+enum AuthProvider {
+  EMAIL // For traditional email/password login
+  GOOGLE
+  APPLE
+  TWITTER // "X"
+}
 
 model User {
-  id       String  @id @default(uuid())
-  email    String  @unique
-  name     String?
-  password String
+  id String @id @default(uuid())
+
+  email      String?      @unique
+  password   String?
+  provider   AuthProvider
+  providerId String? // Ensure uniqueness for social logins
+  name       String?
 
   refreshTokens RefreshToken?
   subscriptions Subscription[]
@@ -28,8 +37,10 @@ model User {
   notes       Note[]
   favorites   Favorite[]
   Progress    Progress?
+  updatedAt   DateTime     @updatedAt
+  createdAt   DateTime     @default(now())
 
-  createdAt DateTime @default(now())
+  @@unique([provider, providerId])
 }
 
 model RefreshToken {
