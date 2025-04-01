@@ -1,4 +1,4 @@
-const { prisma } = require("../config/prisma");
+const { prisma } = require("../../config/prisma");
 
 const getMainDashboard = async (userId) => {
   const user = await prisma.user.findUnique({

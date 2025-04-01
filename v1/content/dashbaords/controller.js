@@ -1,7 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const queries = require("./queries");
 
-const dashboardData = asyncHandler(async (req, res) => {
+const mainDashboardData = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const userData = await queries.getMainDashboard(userId);
   if (!userData)
@@ -13,4 +13,4 @@ const dashboardData = asyncHandler(async (req, res) => {
   return res.status(200).json(userData);
 });
 
-module.exports = { dashboardData };
+module.exports = { mainDashboardData };

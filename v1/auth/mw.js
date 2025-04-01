@@ -104,4 +104,19 @@ const protectedAccess = (productId) =>
     next();
   });
 
-module.exports = { generateTokens, validateAccessToken, protectedAccess };
+const adminAuthMW = () =>
+  asyncHandler(async (req, res, next) => {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    return req.user.id === process.env.ADMIN_ID
+      ? next()
+      : res.status(403).json({ message: "forbidden access" });
+  });
+
+module.exports = {
+  generateTokens,
+  validateAccessToken,
+  protectedAccess,
+  adminAuthMW,
+};
