@@ -14,7 +14,7 @@ router.use(validateAccessToken);
 
 // notes add, delete, update, and get all for a course or a specific one.
 router.post("/notes", notes.createNote);
-router.get("/notes?type=X", notes.getUserNotes);
+router.get("/notes", notes.getUserNotes);
 router.get("/notes/:id", notes.getNoteById);
 router.put("/notes/:id", notes.updateNote);
 router.delete("/notes/:id", notes.deleteNote);
