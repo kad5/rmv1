@@ -5,6 +5,7 @@ const ctrl = require("./controller");
 const validate = require("./validation");
 
 const router = Router();
+// api/v1/auth
 
 router.post("/login", loginLimiter, validate.login, ctrl.loginEmail);
 router.post("/signup", signupLimiter, validate.signup, ctrl.signupEmail);

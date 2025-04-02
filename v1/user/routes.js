@@ -8,6 +8,7 @@ const pref = require("./preferences/preferences");
 const favs = require("./favorites/fav");
 
 const router = Router();
+// api/v1/user
 
 router.use(validateAccessToken);
 

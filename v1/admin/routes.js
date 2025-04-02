@@ -3,6 +3,7 @@ const adminController = require("./controller");
 const { validateAccessToken, adminAuthMW } = require("../auth/mw");
 
 const router = Router();
+// api/v1/admin
 
 router.use(validateAccessToken);
 router.use(adminAuthMW);
