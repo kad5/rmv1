@@ -1,5 +1,5 @@
 const { prisma } = require("../../config/prisma");
-
+const asyncHandler = require("express-async-handler");
 // create or update feedback
 const upsertFeedback = async (req, res) => {
   try {
@@ -26,21 +26,27 @@ const upsertFeedback = async (req, res) => {
 };
 
 // load specific feedback
-const getFeedback = async (req, res) => {
-  try {
-    const { targetId, targetType } = req.query;
-    const userId = req.user.id;
+const getFeedback = asyncHandler(async (req, res) => {
+  const { targetId } = req.params;
+  const targetType = req.query.type;
+  const userId = req.user.id;
 
-    const feedback = await prisma.feedback.findUnique({
-      where: { userId_targetId_targetType: { userId, targetId, targetType } },
-    });
-
-    res.json(feedback || null); // Return `null` if no feedback
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching feedback", error: error.message });
+  if (!targetType) {
+    return res
+      .status(400)
+      .json({ message: "Missing targetType query parameter." });
   }
-};
+
+  const validTypes = ["LESSON", "QUIZ" /* add others */];
+  if (!validTypes.includes(targetType)) {
+    return res.status(400).json({ message: "Invalid targetType." });
+  }
+
+  const feedback = await prisma.feedback.findUnique({
+    where: { userId_targetId_targetType: { userId, targetId, targetType } },
+  });
+
+  res.status(200).json({ success: true, data: feedback || null });
+});
 
 module.exports = { getFeedback, upsertFeedback };

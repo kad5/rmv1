@@ -3,6 +3,8 @@ const maindb = require("./dashbaords/main-db");
 const coursedb = require("./dashbaords/course-db");
 const examdb = require("./dashbaords/exam-db");
 const lesson = require("./courses/lessonPage");
+const lqProgress = require("./courses/progress");
+const casesPg = require("./courses/specific/cases-progress");
 
 const { validateAccessToken, protectedAccess } = require("../auth/mw");
 
@@ -42,30 +44,20 @@ router.get(
   lesson.getLessonPage
 );
 
-// favorite cards, cases, questions
+// completion for courses lesson or quiz & cases
+router.post(
+  "/progress/courses/:courseId/lesson/:lessonId",
+  protectedAccess("courseId"),
+  lqProgress.toggleProgress
+);
 
-// completion for courses
+//case
+router.post(
+  "/progress/courses/:courseId/cases/:caseId",
+  protectedAccess("courseId"),
+  casesPg.toggleCaseProgress
+);
 
 // completion for exams
 
 module.exports = router;
-
-/*
-
-router.get("/dashboard/my-cards", ctrl.getDashbaord);
-router.get("/dashboard/my-cases", ctrl.getDashbaord);
-router.get("/dashboard/my-notes", ctrl.getDashbaord);
-
-router.post("/course-completion/true/:lessonId", ctrl.getDashbaord);
-router.post("/course-completion/false/:lessonId", ctrl.getDashbaord);
-router.get("lesson/:lessonId", ctrl.getDashbaord);
-
-/* needed routes
-
--get favorite cards
-
--get favorite cases
-
--post complete lesson, uncomplete lesson (upsert)
-
-*/
