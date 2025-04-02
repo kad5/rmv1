@@ -109,19 +109,22 @@ model Feedback {
 }
 
 enum FavoriteTargetType {
-  CARD_2B // 2B Course cards
-  CASE_2B // 2B Course cases
-  LONG_CASE // 2B Long Case Exam Bank
-  VIVA_CASE //2b viva question
-  RAPID // 2B Rapid Reporting Bank
-
-  CARD_2A // 2a card
-  MCQ_2A // Step 1, Step 2A MCQs
-  ALGORITHM_2A
-
-  CARD_ANATOMY //  step 1 anatomy card
-  CARD_PHYSICS // step 1 physics card
-  IMAGE // Step 1 Image Bank . I might add an image table for step 1 anatomy later
+  CARD
+  CASE
+  QUESTION
+  /**
+   * CARD_2B // 2B Course cards
+   * CASE_2B // 2B Course cases
+   * LONG_CASE // 2B Long Case Exam Bank
+   * VIVA_CASE //2b viva question
+   * RAPID // 2B Rapid Reporting Bank
+   * CARD_2A // 2a card
+   * MCQ_2A // Step 1, Step 2A MCQs
+   * ALGORITHM_2A
+   * CARD_ANATOMY //  step 1 anatomy card
+   * CARD_PHYSICS // step 1 physics card
+   * IMAGE // Step 1 Image Bank . I might add an image table for step 1 anatomy later
+   */
 }
 
 model Favorite {
@@ -132,10 +135,11 @@ model Favorite {
   providerId String // Stores either a course or bank ID
   targetId   String // The favorited item (card, case, MCQ, etc.)
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, type, targetId]) // Ensures one favorite per item per user
   @@index([userId, type]) // Indexing for faster retrieval
+  @@index([userId, providerId])
 }
 
 enum PreferenceKey {
@@ -367,7 +371,7 @@ model LessonProgress {
 
   Progress Progress @relation(fields: [progressId], references: [id])
 
-  @@unique([progressId, courseId, lessonId])
+  @@unique([progressId, courseId, lessonId, type])
   @@index([progressId, courseId])
 }
 

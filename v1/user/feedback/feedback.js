@@ -1,4 +1,4 @@
-const prisma = require("../../config/prisma");
+const { prisma } = require("../../config/prisma");
 
 // create or update feedback
 const upsertFeedback = async (req, res) => {

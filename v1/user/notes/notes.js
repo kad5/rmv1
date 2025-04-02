@@ -1,7 +1,7 @@
-const prisma = require("../../config/prisma");
+const { prisma } = require("../../config/prisma");
 
 // Create Note
-export const createNote = async (req, res) => {
+const createNote = async (req, res) => {
   try {
     const { providerId, targetId, content, type } = req.body;
     const userId = req.user.id;
@@ -19,7 +19,7 @@ export const createNote = async (req, res) => {
 };
 
 // Get All Notes for User
-export const getUserNotes = async (req, res) => {
+const getUserNotes = async (req, res) => {
   try {
     const userId = req.user.id;
     const { type } = req.query;
@@ -36,7 +36,7 @@ export const getUserNotes = async (req, res) => {
 };
 
 // Get Single Note by ID
-export const getNoteById = async (req, res) => {
+const getNoteById = async (req, res) => {
   try {
     const { id } = req.params;
     const note = await prisma.note.findUnique({ where: { id } });
@@ -54,7 +54,7 @@ export const getNoteById = async (req, res) => {
 };
 
 // Update Note
-export const updateNote = async (req, res) => {
+const updateNote = async (req, res) => {
   try {
     const { id } = req.params;
     const { content } = req.body;
@@ -79,7 +79,7 @@ export const updateNote = async (req, res) => {
 };
 
 // Delete Note
-export const deleteNote = async (req, res) => {
+const deleteNote = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;

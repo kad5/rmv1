@@ -74,9 +74,10 @@ const validateRefreshToken = async (req, res, next) => {
   }
 };
 
-const protectedAccess = (productId) =>
+const protectedAccess = (paramName) =>
   asyncHandler(async (req, res, next) => {
-    const userId = req.user;
+    const productId = req.params[paramName];
+    const userId = req.user.id;
     const subscriptions = await queries.getSubList(userId);
 
     // Transform into a list of accessible products with end dates
