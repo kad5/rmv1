@@ -413,7 +413,7 @@ model QuestionAttempt {
   correct         Boolean
   answer          String?
   attemptedAt     DateTime @default(now())
-  durationSeconds Int // ✅ NEW: Tracks time spent
+  durationSeconds Int
 
   profile     Profile     @relation(fields: [profileId], references: [id])
   ExamAttempt ExamAttempt @relation(fields: [examAttemptId], references: [id])
