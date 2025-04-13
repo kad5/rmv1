@@ -5,13 +5,21 @@ const asyncHandler = require("express-async-handler");
 const ACCESS_SECRET = process.env.ACCESS_SECRET;
 const REFRESH_SECRET = process.env.REFRESH_SECRET;
 
-const generateTokens = async (userId) => {
-  const accessToken = jwt.sign({ userId }, ACCESS_SECRET, {
-    expiresIn: "1m",
-  });
-  const refreshToken = jwt.sign({ userId }, REFRESH_SECRET, {
-    expiresIn: "2m",
-  });
+const generateTokens = async (userId, activatedAccount, profileId) => {
+  const accessToken = jwt.sign(
+    { id: userId, activatedAccount, profileId },
+    ACCESS_SECRET,
+    {
+      expiresIn: "15m",
+    }
+  );
+  const refreshToken = jwt.sign(
+    { id: userId, activatedAccount, profileId },
+    REFRESH_SECRET,
+    {
+      expiresIn: "7d",
+    }
+  );
   await queries.addRefreshToken(userId, refreshToken);
 
   return { accessToken, refreshToken };
@@ -55,7 +63,11 @@ const validateRefreshToken = async (req, res, next) => {
       }
 
       const { accessToken, refreshToken: newRefreshToken } =
-        await generateTokens(decoded.userId);
+        await generateTokens(
+          decoded.id,
+          decoded.activatedAccount,
+          decoded.profileId
+        );
 
       res.cookie("refreshToken", newRefreshToken, {
         httpOnly: true,
@@ -66,8 +78,12 @@ const validateRefreshToken = async (req, res, next) => {
       });
       res.setHeader("x-new-access-token", accessToken);
 
-      req.user = { id: decoded.userId };
-      return next();
+      req.user = {
+        id: decoded.id,
+        activatedAccount: decoded.activatedAccount,
+        profileId: decoded.profileId,
+      };
+      next();
     });
   } catch (err) {
     return res.status(500).json({ message: "Internal server error" });
@@ -115,9 +131,19 @@ const adminAuthMW = () =>
       : res.status(403).json({ message: "forbidden access" });
   });
 
+const verifiedUser = asyncHandler(async (req, res, next) => {
+  const verified = req.user.activatedAccount;
+  if (verified !== true)
+    return res
+      .status(403)
+      .json({ message: "Access denied. Please verify your account" });
+  next();
+});
+
 module.exports = {
   generateTokens,
   validateAccessToken,
   protectedAccess,
   adminAuthMW,
+  verifiedUser,
 };

@@ -20,18 +20,23 @@ passport.use(
         const email = profile.emails[0]?.value || null;
         const name = profile.displayName || null;
 
-        let user = await queries.getUserByProvider("GOOGLE", providerId);
+        let user = await queries.getUserByProvider("google", providerId);
 
         if (!user) {
           // check for email conflicts {someone already registerd with that same email the social uses}
           if (email) {
             const existingUser = await queries.getUserByEmail(email);
             if (existingUser) {
-              return done(null, false, { message: "Email already registered" });
+              const updatedUser = await queries.updateUserProvider(
+                "google",
+                providerId,
+                existingUser.id
+              );
+              return done(null, updatedUser);
             }
           }
           user = await queries.createNewSocialUser(
-            "GOOGLE",
+            "google",
             providerId,
             email,
             name
@@ -73,16 +78,21 @@ passport.use(
             console.error("Failed to parse req.query.user:", parseErr);
           }
         }
-        let user = await queries.getUserByProvider("APPLE", sub);
+        let user = await queries.getUserByProvider("apple", sub);
 
         // If no user exists, handle registration
         if (!user) {
           let name = null;
           let userEmail = email || null;
           if (userEmail) {
-            const existingUser = await queries.getUserByEmail(userEmail);
+            const existingUser = await queries.getUserByEmail(email);
             if (existingUser) {
-              return done(null, false, { message: "Email already registered" });
+              const updatedUser = await queries.updateUserProvider(
+                "apple",
+                sub,
+                existingUser.id
+              );
+              return done(null, updatedUser);
             }
           }
           if (firstTimeUser) {
@@ -91,7 +101,7 @@ passport.use(
             }`.trim();
           }
           user = await queries.createNewSocialUser(
-            "APPLE",
+            "apple",
             sub,
             userEmail,
             name
@@ -114,7 +124,7 @@ passport.use(
       clientSecret: process.env.TWITTER_CLIENT_SECRET,
       callbackURL: "/auth/twitter/callback",
       clientType: "confidential",
-      scope: ["email", "offline.access"],
+      scope: ["email"],
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -123,19 +133,22 @@ passport.use(
         const email =
           profile.emails && profile.emails[0] ? profile.emails[0].value : null;
 
-        let user = await queries.getUserByProvider("TWITTER", providerId);
+        let user = await queries.getUserByProvider("twitter", providerId);
 
         if (!user) {
           if (email) {
             const existingUser = await queries.getUserByEmail(email);
             if (existingUser) {
-              return done(null, false, {
-                message: "Email already registered",
-              });
+              const updatedUser = await queries.updateUserProvider(
+                "twitter",
+                providerId,
+                existingUser.id
+              );
+              return done(null, updatedUser);
             }
           }
           user = await queries.createNewSocialUser(
-            "TWITTER",
+            "twitter",
             providerId,
             email,
             name

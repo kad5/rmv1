@@ -23,9 +23,11 @@
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.10.1",
     "passport": "^0.7.0",
     "passport-apple": "^2.0.2",
-    "passport-google-oauth20": "^2.0.0"
+    "passport-google-oauth20": "^2.0.0",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "prisma": "^6.5.0"

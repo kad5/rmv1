@@ -3,8 +3,9 @@ const passport = require("../config/passport");
 const { loginLimiter, signupLimiter } = require("../config/rate-limit");
 const ctrl = require("./controller");
 const validate = require("./validation");
-
+const { validateAccessToken } = require("./mw");
 const router = Router();
+
 // api/v1/auth
 
 router.post("/login", loginLimiter, validate.login, ctrl.loginEmail);
@@ -43,5 +44,13 @@ router.get(
   }),
   ctrl.authApple
 );
+
+router.get("/me", validateAccessToken, ctrl.getUserData);
+router.post(
+  "/verify/request",
+  validateAccessToken,
+  ctrl.requestAccountVerification
+);
+router.post("/verify/confirm", ctrl.verifyAccount);
 
 module.exports = router;

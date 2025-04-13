@@ -14,38 +14,51 @@ datasource db {
 }
 
 //---------------------- auth tables ----------------------//
-enum AuthProvider {
-  EMAIL // For traditional email/password login
-  GOOGLE
-  APPLE
-  TWITTER // "X"
-}
 
 model User {
-  id String @id @default(uuid())
+  id        String @id @default(uuid())
+  profileId String @unique
 
-  email      String?      @unique
-  password   String?
-  provider   AuthProvider
-  providerId String? // Ensure uniqueness for social logins
-  name       String?
+  email     String? @unique
+  googleId  String? @unique
+  appleId   String? @unique
+  twitterId String? @unique
 
-  refreshTokens RefreshToken?
+  password String
+  name     String
+
+  refreshTokens     RefreshToken?
+  activatedAccount  Boolean             @default(false)
+  verificationToken verificationToken[]
+
   subscriptions Subscription[]
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  profile Profile @relation(fields: [profileId], references: [id])
+}
+
+model Profile {
+  id   String @id @default(uuid())
+  user User?
+
+  currentLevel String?
+  nextExamDate DateTime?
 
   preferences Preference[]
   notes       Note[]
   favorites   Favorite[]
-  Progress    Progress?
-  updatedAt   DateTime     @updatedAt
-  createdAt   DateTime     @default(now())
 
-  @@unique([provider, providerId])
+  courseProgress   CourseProgress[]
+  caseProgress     CaseProgress[]
+  examAttempts     ExamAttempt[]
+  questionAttempts QuestionAttempt[]
 }
 
 model RefreshToken {
   id        String   @id @default(uuid())
-  userId    String   @unique //making userId unique enforces signel device login only to prevent account sharing. 
+  userId    String   @unique //making userId unique enforces signel device login only 
   token     String
   expiresAt DateTime
 
@@ -53,116 +66,108 @@ model RefreshToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-//---------------------- shared tables ----------------------//
-
-enum NotesTargetType {
-  CARD_2B
-  EXAM_RR
-  EXAM_LONG
-  EXAM_VIVA
-
-  CARD_2A
-  EXAM_2A
-
-  CARD_PHYSICS
-  EXAM_PHYSICS
-
-  CARD_ANATOMY
-  EXAM_ANATOMY
+enum verificationTokenType {
+  ACCOUNT_CREATION
+  PASSWORD_RESET
+  ACCOUNT_DELETION
+  SERVICE_CANCELLATION
 }
 
-model Note {
-  id     String @id @default(uuid())
+model verificationToken {
+  id     String                @id @default(uuid())
+  token  String                @unique
   userId String
+  type   verificationTokenType
 
-  type       NotesTargetType
-  providerId String // Stores either a course or (examID same as target for exam)
-  targetId   String // The favorited item (card, case, MCQ, etc.)
+  usedAt    DateTime?
+  updatedAt DateTime  @updatedAt
+  createdAt DateTime  @default(now())
 
-  content String
-
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
-
-  User User @relation(fields: [userId], references: [id])
-
-  @@index([userId, type])
+  user User @relation(fields: [userId], references: [id])
 }
 
+//---------------------- shared tables ----------------------//
 enum FeedbackTargetType {
-  LESSON
-  QUIZ
-  EXAM
+  COURSE_CONTENT //for lessons table
+  EXAM // for exams table
 }
 
 model Feedback {
-  id         String             @id @default(uuid())
-  userId     String
-  evaluation Int
-  targetId   String // Stores the ID of either Lesson, Quiz, or Exam
+  id        String @id @default(uuid())
+  profileId String
+
   targetType FeedbackTargetType
+  targetId   String // stores the ID of either Lesson, Quiz, or Exam
+  evaluation Int
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, targetId, targetType]) // Ensures one feedback per user per instance
+  @@unique([profileId, targetId, targetType]) // Ensures one feedback per user per instance
+}
+
+model Note {
+  id        String @id @default(uuid())
+  profileId String
+
+  providerId String // Stores either a course or (examID same as target for exam) // to product id
+  targetId   String // The item the note is attached to (card, exam)
+  content    String
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, providerId])
 }
 
 enum FavoriteTargetType {
   CARD
   CASE
   QUESTION
-  /**
-   * CARD_2B // 2B Course cards
-   * CASE_2B // 2B Course cases
-   * LONG_CASE // 2B Long Case Exam Bank
-   * VIVA_CASE //2b viva question
-   * RAPID // 2B Rapid Reporting Bank
-   * CARD_2A // 2a card
-   * MCQ_2A // Step 1, Step 2A MCQs
-   * ALGORITHM_2A
-   * CARD_ANATOMY //  step 1 anatomy card
-   * CARD_PHYSICS // step 1 physics card
-   * IMAGE // Step 1 Image Bank . I might add an image table for step 1 anatomy later
-   */
 }
 
 model Favorite {
-  id     String @id @default(uuid())
-  userId String
+  id        String @id @default(uuid())
+  profileId String
 
-  type       FavoriteTargetType
+  type       FavoriteTargetType // needed since 1 course can have cards and cases
   providerId String // Stores either a course or bank ID
   targetId   String // The favorited item (card, case, MCQ, etc.)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, type, targetId]) // Ensures one favorite per item per user
-  @@index([userId, type]) // Indexing for faster retrieval is it needed?
-  @@index([userId, providerId])
+  @@unique([profileId, type, targetId]) // ensures one favorite per item per user
+  @@index([profileId, providerId]) // indexes all the stuff from a course or an exam bank
+  @@index([profileId, providerId, type]) // only needed for  cards/ cases of same course
 }
 
 enum PreferenceKey {
-  DARK_MODE
-  SIDEBAR_POSITION
-  AUTOBILLING //  Store Stripe auto-renew setting here too
+  //general preferences
+  DARK_MODE // vales: LGIHT or DARK or SYSTEM
+  SIDEBAR_POSITION // values: Boolean
 
-  MODE_2B_COURSE
+  EMAIL_MARKETING // values: Boolean
+  EMAIL_NOTIFICATION // values: Boolean
+
+  // specific
+  MODE_2B_COURSE //values: REVIEW or STUDY
 }
 
 model Preference {
-  id     String @id @default(uuid())
-  userId String
+  id        String @id @default(uuid())
+  profileId String
 
   productId String? // Nullable in case the preference is global
   key       PreferenceKey // ENUM for easier querying
   value     Json // Store structured settings (booleans, numbers, etc.)
 
   updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id])
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, key, productId]) // Ensure a user can have only one preference per key-product pair
-  @@index([userId]) // Fast lookup for user preferences
+  @@unique([profileId, key, productId]) // Ensure a user can have only one preference per key-product pair
+  @@index([profileId]) // Fast lookup of all user preferences at login propably and store as part of user context
 }
 
 //---------------------- products tables ----------------------//
@@ -178,29 +183,24 @@ enum ContentType {
   EXAM_BANK
 }
 
-enum SubscriptionStatus {
-  ACTIVE_INITIAL
-  ACTIVE_MONTHLY
-  CANCELED
-  EXPIRED
-}
-
 model Product {
   id          String           @id @default(uuid())
   title       String
   description String?
   step        StepLevel
-  contentType ContentType
   packages    PackageProduct[]
-  totalItems  Int? // Total lessons+quizes for COURSE, total exams for EXAM_BANK
+
+  contentType   ContentType
+  courseContent CourseContnet[]
+  exams         Exam[]
 }
 
 model Package {
   id            String           @id @default(uuid())
   title         String
   description   String?
-  price         Float // The price the user pays
-  renewalCost   Float // Monthly renewal cost
+  price         Float // The intial price the user pays
+  renewalCost   Float // Monthly renewal cost as a guideline initially to display to the user, but billing follows the cost on Subscription model
   duration      Int // Initial access period (e.g., 3 months, 6 months) ie stripe paid trial
   products      PackageProduct[]
   subscriptions Subscription[]
@@ -213,6 +213,13 @@ model PackageProduct {
   product   Product @relation(fields: [productId], references: [id])
 
   @@id([packageId, productId])
+}
+
+enum SubscriptionStatus {
+  ACTIVE_INITIAL
+  ACTIVE_MONTHLY
+  CANCELED
+  EXPIRED
 }
 
 model Subscription {
@@ -229,8 +236,8 @@ model Subscription {
   nextBillingDate  DateTime?
   subscriptionEnd  DateTime
 
-  renewalCost Float
-  autoRenew   Boolean @default(true) // ✅ NEW: Tracks auto-billing preference
+  renewalCost Float // keep this here also because you can change package pricing without affecting existing subscriptions
+  autoRenew   Boolean @default(true) // tracks auto-billing preference PER SUBSCRIPTION
 
   user    User    @relation(fields: [userId], references: [id])
   package Package @relation(fields: [packageId], references: [id])
@@ -239,15 +246,20 @@ model Subscription {
 }
 
 //---------------------- content tables ----------------------//
+enum CourseContnetType {
+  LESSON
+  QUIZ
+}
 
-model Lesson {
+model CourseContnet {
   id       String @id @default(uuid())
   courseId String // relates to a Product with contentType = COURSE
 
-  order       Int // ordering in the course
-  orderString String // for the visuals only for example lesson number 1 would have a string of "Lesson 1"
-  week        Int // which week the lesson is part of
+  type        CourseContnetType
   module      String
+  week        Int // which week the lesson is part of
+  order       Int // ordering in the week
+  orderString String // for the visuals only for example lesson number 1 would have a string of "Lesson 1"
 
   metadata    Json? // currently nothing here, but for later if i want to add something
   title       String // the title
@@ -256,60 +268,59 @@ model Lesson {
   cards               Card[] //its cards
   tips                Json? // tips at te end of the lesson if any
   additionalResources Json? // additional resources at te end of the lesson if any
-  Quiz                Quiz?
+
+  lesson CourseContnet? @relation("LessonQuiz")
+  quiz   CourseContnet? @relation("LessonQuiz", fields: [quizId], references: [id])
+  quizId String?        @unique
+
+  course Product @relation(fields: [courseId], references: [id])
 
   @@index([courseId]) // Added index for faster course lesson queries
-}
-
-model Quiz {
-  id       String @id @default(uuid())
-  lessonId String @unique // One quiz per lesson
-  courseId String
-
-  questions Json // Array of questions, could be an MCQ format or free text
-  metadata  Json? // Any quiz-specific settings
-
-  lesson Lesson @relation(fields: [lessonId], references: [id])
-
-  @@index([courseId]) // Added index for course-level quiz queries
+  @@index([type])
 }
 
 enum CardType {
   disease_Card
   approach
+  emergency
+  dd
+  aunt_minnie
 }
 
 model Card {
   id       String @id @default(uuid())
-  lessonId String
+  parentId String
 
-  type    CardType
-  order   Int
-  module  String // i added this here also so that if i want to query by module. is it redundant?
-  title   String
-  content Json // would contain subtitle, description, lists, and background info section.
+  type   CardType
+  order  Int
+  module String // i added this here also so that if i want to query by module.
+
+  metadata Json? // currently nothing here, but for later if i want to add something
+  title    String
+  content  Json // would contain subtitle, description, lists, and background info section.
 
   // For more detailed linking to cases if needed:
   cases  Case[]
-  lesson Lesson @relation(fields: [lessonId], references: [id])
+  parent CourseContnet @relation(fields: [parentId], references: [id])
 
-  @@index([lessonId]) // Added index for faster lesson card queries
+  @@index([parentId]) // Added index for faster lesson card queries
 }
 
 model Case {
   id     String @id @default(uuid())
   cardId String
 
-  order     Int
-  title     String
-  module    String // i added this here also so that if i want to query by module. is it redundant?
+  order  Int
+  title  String
+  module String // i added this here also so that if i want to query by module. 
+
   metadata  Json? // currently nothing here, but for later if i want to add something
+  content   Json // would be an array of text strings probably or perhaps an object
+  images    Json
   viva      Boolean? //specific for the 2b course
   rapids    Boolean? //specific for the 2b course
   longs     Boolean? //specific for the 2b course
   highYield Boolean? //specific for the 2b course
-  images    Json
-  content   Json // would be an array of text strings probably or perhaps an object
 
   card Card @relation(fields: [cardId], references: [id])
 
@@ -318,11 +329,13 @@ model Case {
 
 model Exam {
   id     String @id @default(uuid())
-  bankId String
+  bankId String // relates to product with contentType = EXAM
 
-  order     Int
+  order     Int // its number in the exam bank
   content   Json //desdescription  and exam specific tips and tricks
-  questions Question[]
+  questions Question[] // references the related questions
+
+  bank Product @relation(fields: [bankId], references: [id])
 
   @@index([bankId]) // Added index for faster bank exam queries
 }
@@ -340,44 +353,25 @@ model Question {
 }
 
 //---------------------- progress tables ----------------------//
+model CourseProgress {
+  id        String @id @default(uuid())
+  profileId String
 
-model Progress {
-  id     String @id @default(uuid())
-  userId String @unique
-
-  lessonProgress   LessonProgress[]
-  caseProgress     CaseProgress[]
-  examAttempts     ExamAttempt[]
-  questionAttempts QuestionAttempt[]
-
-  user User @relation(fields: [userId], references: [id])
-}
-
-enum QuizOrLesson {
-  QUIZ
-  LESSON
-}
-
-model LessonProgress {
-  id         String @id @default(uuid())
-  progressId String
-
-  courseId String // corresponds to the Product id (course)
-  lessonId String // corresponds to Lesson id
-  type     QuizOrLesson // quiz or a lesson, more enums maybe added later
+  courseId        String // corresponds to the Product id (course)
+  courseContnetId String // corresponds to Lesson/quiz id
 
   completed   Boolean   @default(false)
   completedAt DateTime?
 
-  Progress Progress @relation(fields: [progressId], references: [id])
+  profile Profile @relation(fields: [profileId], references: [id])
 
-  @@unique([progressId, courseId, lessonId, type])
-  @@index([progressId, courseId])
+  @@unique([profileId, courseId, courseContnetId])
+  @@index([profileId, courseId])
 }
 
 model CaseProgress {
-  id         String @id @default(uuid())
-  progressId String
+  id        String @id @default(uuid())
+  profileId String
 
   courseId String // corresponds to the Product id (course)
   caseId   String // corresponds to case id that is being tracked
@@ -385,44 +379,44 @@ model CaseProgress {
   completed   Boolean   @default(false)
   completedAt DateTime?
 
-  Progress Progress @relation(fields: [progressId], references: [id])
+  profile Profile @relation(fields: [profileId], references: [id])
 
-  @@unique([progressId, courseId, caseId])
+  @@unique([profileId, courseId, caseId])
   @@index([courseId, completed])
 }
 
-// need to add a relation between exam attempt and question attempt
-
 model ExamAttempt {
-  id         String @id @default(uuid())
-  progressId String
+  id        String @id @default(uuid())
+  profileId String
 
   examBankId String // corresponds to a Product id (exam bank)
   examId     String // identifier for the exam within the bank
 
-  score           Int
-  attemptedAt     DateTime @default(now())
-  durationSeconds Int // ✅ NEW: Tracks time spent
+  score            Int
+  attemptedAt      DateTime          @default(now())
+  durationSeconds  Int
+  questionAttempts QuestionAttempt[]
 
-  Progress Progress @relation(fields: [progressId], references: [id])
+  profile Profile @relation(fields: [profileId], references: [id])
 
-  @@index([progressId, examBankId])
-  @@index([progressId, examBankId, examId])
+  @@index([profileId, examBankId])
+  @@index([profileId, examBankId, examId])
 }
 
 model QuestionAttempt {
-  id         String @id @default(uuid())
-  progressId String
+  id        String @id @default(uuid())
+  profileId String
 
-  examId     String // should match ExamAttempt.examId
-  questionId String // identifier for the question in the exam
+  examAttemptId String // should match ExamAttempt.examId
+  questionId    String // identifier for the question in the exam
 
   correct         Boolean
   answer          String?
   attemptedAt     DateTime @default(now())
   durationSeconds Int // ✅ NEW: Tracks time spent
 
-  Progress Progress @relation(fields: [progressId], references: [id])
+  profile     Profile     @relation(fields: [profileId], references: [id])
+  ExamAttempt ExamAttempt @relation(fields: [examAttemptId], references: [id])
 
-  @@index([progressId, examId, questionId])
+  @@index([profileId, examAttemptId, questionId])
 }
