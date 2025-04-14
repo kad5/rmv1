@@ -45,21 +45,23 @@ const validateAccessToken = async (req, res, next) => {
 const validateRefreshToken = async (req, res, next) => {
   const refreshToken = req.cookies.refreshToken;
   if (!refreshToken)
-    return res.status(401).json({ message: "Unauthorized, new login needed" });
+    return res
+      .status(401)
+      .json({ message: "Unauthorized, new login needed nrts" });
 
   try {
     const storedToken = await queries.checkRefreshToken(refreshToken);
     if (!storedToken) {
       return res
         .status(401)
-        .json({ message: "Unauthorized, new login needed" });
+        .json({ message: "Unauthorized, new login needed nrtd" });
     }
 
     jwt.verify(refreshToken, REFRESH_SECRET, async (err, decoded) => {
       if (err) {
         return res
           .status(401)
-          .json({ message: "Unauthorized, new login needed" });
+          .json({ message: "Unauthorized, new login needed invrt" });
       }
 
       const { accessToken, refreshToken: newRefreshToken } =
@@ -68,7 +70,7 @@ const validateRefreshToken = async (req, res, next) => {
           decoded.activatedAccount,
           decoded.profileId
         );
-
+      console.log("tokens being refreshed");
       res.cookie("refreshToken", newRefreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
