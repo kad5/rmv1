@@ -7,7 +7,7 @@ const helmet = require("helmet");
 const v1router = require("./v1/v1router");
 
 const app = express();
-
+app.set("trust proxy", 1);
 app.use(helmet());
 app.use((req, res, next) => {
   res.set({
@@ -32,7 +32,7 @@ app.use(
     credentials: true,
   })
 );
-
+app.get("/ipTest", (req, res) => res.send(req.ip));
 app.use("/api/v1", v1router);
 
 const PORT = process.env.PORT;

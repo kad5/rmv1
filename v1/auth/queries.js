@@ -5,7 +5,7 @@ const { randomUUID } = require("crypto");
 
 const createNewUser = async (email, password, name) => {
   try {
-    const profile = await prisma.profile.create();
+    const profile = await prisma.profile.create({ data: {} });
     const user = await prisma.user.create({
       data: { email, password, name, profileId: profile.id },
     });
