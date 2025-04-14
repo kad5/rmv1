@@ -14,7 +14,7 @@ router.use(validateAccessToken);
 // api/v1/content
 
 // dashboards for a course or exam bank
-router.get("/dashboard/main", maindb.getMainDashboard);
+router.get("/dashboard/main", maindb.mainDashboardData);
 router.get(
   "/dashboard/courses/:courseId",
   protectedAccess("courseId"),

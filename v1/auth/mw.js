@@ -47,21 +47,21 @@ const validateRefreshToken = async (req, res, next) => {
   if (!refreshToken)
     return res
       .status(401)
-      .json({ message: "Unauthorized, new login needed nrts" });
+      .json({ message: "Access denied, new login needed." });
 
   try {
     const storedToken = await queries.checkRefreshToken(refreshToken);
     if (!storedToken) {
       return res
         .status(401)
-        .json({ message: "Unauthorized, new login needed nrtd" });
+        .json({ message: "Access denied, new login needed." });
     }
 
     jwt.verify(refreshToken, REFRESH_SECRET, async (err, decoded) => {
       if (err) {
         return res
           .status(401)
-          .json({ message: "Unauthorized, new login needed invrt" });
+          .json({ message: "Access denied, new login needed." });
       }
 
       const { accessToken, refreshToken: newRefreshToken } =
@@ -126,11 +126,11 @@ const protectedAccess = (paramName) =>
 const adminAuthMW = () =>
   asyncHandler(async (req, res, next) => {
     if (!req.user || !req.user.id) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({ message: "Unauthorized access" });
     }
     return req.user.id === process.env.ADMIN_ID
       ? next()
-      : res.status(403).json({ message: "forbidden access" });
+      : res.status(403).json({ message: "Forbidden access" });
   });
 
 const verifiedUser = asyncHandler(async (req, res, next) => {

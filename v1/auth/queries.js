@@ -120,6 +120,16 @@ const getSubList = async (userId) => {
                 product: {
                   select: {
                     id: true,
+                    title: true,
+                    description: true,
+                    step: true,
+                    contentType: true,
+                    _count: {
+                      select: {
+                        courseContent: true,
+                        exams: true,
+                      },
+                    },
                   },
                 },
               },
