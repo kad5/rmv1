@@ -32,7 +32,7 @@ app.use(
     credentials: true,
   })
 );
-app.get("/ipTest", (req, res) => res.send(req.ip));
+
 app.use("/api/v1", v1router);
 
 const PORT = process.env.PORT;

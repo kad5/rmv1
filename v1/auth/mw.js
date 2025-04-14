@@ -10,14 +10,14 @@ const generateTokens = async (userId, activatedAccount, profileId) => {
     { id: userId, activatedAccount, profileId },
     ACCESS_SECRET,
     {
-      expiresIn: "15m",
+      expiresIn: process.env.ACCESS_EXPIRY,
     }
   );
   const refreshToken = jwt.sign(
     { id: userId, activatedAccount, profileId },
     REFRESH_SECRET,
     {
-      expiresIn: "7d",
+      expiresIn: process.env.REFRESH_EXPIRY,
     }
   );
   await queries.addRefreshToken(userId, refreshToken);

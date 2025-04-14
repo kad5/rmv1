@@ -59,7 +59,7 @@ model Profile {
 model RefreshToken {
   id        String   @id @default(uuid())
   userId    String   @unique //making userId unique enforces signel device login only 
-  token     String
+  token     String   @unique
   expiresAt DateTime
 
   createdAt DateTime @default(now())
