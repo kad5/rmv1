@@ -138,7 +138,7 @@ const accountVerificationEmail = async (user, token) => {
   `;
   try {
     await transporter.sendMail({
-      from: "noreply@radiologymap.com",
+      from: process.env.NM_EMAIL,
       to: user.email,
       subject: "Account Verification",
       html: verificationEmailHtml,
