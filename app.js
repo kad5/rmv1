@@ -30,6 +30,7 @@ app.use(
       process.env.ADMIN_ORIGIN,
     ],
     credentials: true,
+    exposedHeaders: ["x-new-access-token"],
   })
 );
 
