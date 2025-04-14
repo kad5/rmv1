@@ -248,4 +248,5 @@ module.exports = {
   createNewSocialUser,
   findVerificationToken,
   activateAccount,
+  createVerificationToken,
 };
