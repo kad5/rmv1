@@ -201,7 +201,7 @@ model Package {
   description   String?
   price         Int // The intial price the user pays
   renewalCost   Int // Monthly renewal cost as a guideline initially to display to the user, but billing follows the cost on Subscription model
-  currency      String           @default("gbp")
+  //currency      String           @default("gbp")
   duration      Int // Initial access period (e.g., 3 months, 6 months) ie stripe paid trial
   products      PackageProduct[]
   subscriptions Subscription[]
@@ -238,7 +238,7 @@ model Subscription {
   subscriptionEnd  DateTime
 
   renewalCost Int // keep this here also because you can change package pricing without affecting existing subscriptions
-  currency    String  @default("gbp") // Adding currency field with default
+  //currency    String  @default("gbp") // Adding currency field with default
   autoRenew   Boolean @default(true) // tracks auto-billing preference PER SUBSCRIPTION
 
   user    User    @relation(fields: [userId], references: [id])
