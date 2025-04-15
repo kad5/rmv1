@@ -2,6 +2,12 @@ const { prisma } = require("../config/prisma");
 const asyncHandler = require("express-async-handler");
 
 const createLesson = asyncHandler(async (req, res) => {
+  const data = req.body;
+  const lesson = await prisma.courseContnet.create({ data });
+  if (lesson) return res.status(200).json(lesson);
+});
+/*
+const createLesson = asyncHandler(async (req, res) => {
   const {
     courseId,
     order,
@@ -47,7 +53,7 @@ const createLesson = asyncHandler(async (req, res) => {
 
   res.status(201).json({ success: true, data: lesson });
 });
-
+*/
 const updateLesson = asyncHandler(async (req, res) => {
   const { lessonId } = req.params;
   const {
