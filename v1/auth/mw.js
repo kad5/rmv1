@@ -123,15 +123,14 @@ const protectedAccess = (paramName) =>
     next();
   });
 
-const adminAuthMW = () =>
-  asyncHandler(async (req, res, next) => {
-    if (!req.user || !req.user.id) {
-      return res.status(401).json({ message: "Unauthorized access" });
-    }
-    return req.user.id === process.env.ADMIN_ID
-      ? next()
-      : res.status(403).json({ message: "Forbidden access" });
-  });
+const adminAuthMW = asyncHandler(async (req, res, next) => {
+  if (!req.user || !req.user.id) {
+    return res.status(401).json({ message: "Unauthorized access" });
+  }
+  return req.user.id === process.env.ADMIN_ID
+    ? next()
+    : res.status(403).json({ message: "Forbidden access" });
+});
 
 const verifiedUser = asyncHandler(async (req, res, next) => {
   const verified = req.user.activatedAccount;
