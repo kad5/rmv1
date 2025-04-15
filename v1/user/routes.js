@@ -20,8 +20,7 @@ router.put("/notes/:id", notes.updateNote);
 router.delete("/notes/:id", notes.deleteNote);
 
 // feedback for a lesson, quiz, or exam
-router.post("/feedback", fb.upsertFeedback);
-router.get("/feedback/:targetId", fb.getFeedback);
+router.post("/feedback", fb.addFeedback);
 
 //preferences: global and local preferences
 router.get("/preferences", pref.getPreferences);
@@ -31,18 +30,18 @@ router.get("/preference/:key/:productId", pref.getPreference);
 
 // favorites: add and remove anything to favorites
 router.get(
-  "/favorites/:providerId/",
+  "/favorites/:providerId",
   protectedAccess("providerId"),
-  favs.getFavorites
+  favs.getFavoritesByProvider
 );
 router.post(
-  "/favorites/:providerId/",
+  "/favorites/:providerId/:type/:targetId",
   protectedAccess("providerId"),
-  favs.toggleFavorite
+  favs.addFavorite
 );
 
 router.delete(
-  "/favorites/:providerId/",
+  "/favorites/:providerId/:type/:targetId",
   protectedAccess("providerId"),
   favs.removeFavorite
 );

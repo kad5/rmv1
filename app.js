@@ -36,6 +36,13 @@ app.use(
 
 app.use("/api/v1", v1router);
 
+app.use((err, req, res, next) => {
+  console.error("Unhandled Error:", err);
+  res
+    .status(500)
+    .json({ message: err.message || "Server error, Please try again later" });
+});
+
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
   console.log(`app running on port ${PORT}`);

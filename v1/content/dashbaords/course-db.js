@@ -1,38 +1,81 @@
 const { prisma } = require("../../config/prisma");
 const asyncHandler = require("express-async-handler");
 
-const getCourseDb = asyncHandler(async () => {
-  const userId = req.user.id;
-  const courseId = req.params;
-  const userData = await getCourseDbData(userId, courseId);
-  if (!userData)
-    return res.status(500).json({
-      message:
-        "Opps, the website is experiencing issues at the moment, please try again later",
-    });
+const getCourseDb = asyncHandler(async (req, res) => {
+  const profileId = req.user.profileId;
+  const { courseId } = req.params;
 
-  return res.status(200).json(userData);
+  try {
+    const [layoutData, progressData] = await Promise.all([
+      getCourseLayoutData(courseId),
+      getCourseProgressData(profileId, courseId),
+    ]);
+    /*    const completedSet = new Set(
+      progressData
+        .filter((item) => item.completed)
+        .map((item) => item.courseContnetId)
+    );*/
+    const completedSet = new Set(
+      progressData.map((item) => item.courseContnetId)
+    );
+    const groupedByWeek = layoutData.reduce((acc, lesson) => {
+      const week = lesson.week || 0;
+      const lessonWithCompleted = {
+        ...lesson,
+        completed: completedSet.has(lesson.id),
+      };
+
+      if (!acc[week]) acc[week] = [];
+      acc[week].push(lessonWithCompleted);
+
+      return acc;
+    }, {});
+    const sortedWeeks = Object.entries(groupedByWeek)
+      .sort(([weekA], [weekB]) => Number(weekA) - Number(weekB))
+      .map(([week, lessons]) => ({
+        week: Number(week),
+        lessons: lessons.sort((a, b) => a.order - b.order),
+      }));
+
+    return res.status(200).json(sortedWeeks);
+  } catch (error) {
+    console.error("Error in getCourseDb:", error);
+    throw new Error("Failed to load course data.");
+  }
 });
 
-const getCourseDbData = async (userId, courseId) => {
+const getCourseLayoutData = async (courseId) => {
   try {
-    return await prisma.lessonProgress.findMany({
-      where: {
-        Progress: { userId: userId },
-        courseId: courseId,
-      },
+    return await prisma.courseContnet.findMany({
+      where: { courseId },
       select: {
         id: true,
-        courseId: true,
-        lessonId: true,
         type: true,
-        completed: true,
-        completedAt: true,
+        week: true,
+        order: true,
+        title: true,
+        quizId: true,
       },
     });
   } catch (error) {
-    console.error("Error fetching course data:", error);
-    throw new Error("Database query failed");
+    console.log("from getCourseLayoutData", error);
+    throw new Error("Failed to load course data.");
+  }
+};
+
+const getCourseProgressData = async (profileId, courseId) => {
+  try {
+    return await prisma.courseProgress.findMany({
+      where: { profileId, courseId },
+      select: {
+        id: true,
+        courseContnetId: true,
+        //completed: true,
+      },
+    });
+  } catch (error) {
+    console.log("from getCourseDbData", error);
+    throw new Error("Failed to load course data.");
   }
 };
 

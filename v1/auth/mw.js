@@ -111,7 +111,7 @@ const protectedAccess = (paramName) =>
     const productAccess = accessibleProducts.find(
       (ap) => ap.productId === productId
     );
-
+    // remember to check if the product doesnt even exist and return a 404 perhaps on front end?
     if (!productAccess || productAccess.subscriptionEnd < now) {
       return res
         .status(403)

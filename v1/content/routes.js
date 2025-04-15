@@ -3,8 +3,7 @@ const maindb = require("./dashbaords/main-db");
 const coursedb = require("./dashbaords/course-db");
 const examdb = require("./dashbaords/exam-db");
 const lesson = require("./courses/lessonPage");
-const lqProgress = require("./courses/progress");
-const casesPg = require("./courses/specific/cases-progress");
+const CourseProgress = require("./courses/progress");
 
 const { validateAccessToken, protectedAccess } = require("../auth/mw");
 
@@ -15,47 +14,42 @@ router.use(validateAccessToken);
 
 // dashboards for a course or exam bank
 router.get("/dashboard/main", maindb.mainDashboardData);
+
+// courses
 router.get(
   "/dashboard/courses/:courseId",
   protectedAccess("courseId"),
   coursedb.getCourseDb
 );
-router.get(
-  "/dashboard/exams/:examId",
-  protectedAccess("examId"),
-  examdb.getExamDb
-);
 
-//  courses lessons & quiz pages and exam main page
 router.get(
-  "/courses/:courseId/lesson/:lessonId",
-  protectedAccess("courseId"),
-  lesson.getLessonPage
-);
-router.get(
-  "/courses/:courseId/quiz/:quizId",
+  "/courses/:courseId/lessons/:lessonId",
   protectedAccess("courseId"),
   lesson.getLessonPage
 );
 
-router.get(
-  "/exams/exam/:examId",
-  protectedAccess("examId"),
-  lesson.getLessonPage
-);
+// exams
+router.get("/dashboard/packages/:packageId", protectedAccess("packageId"));
 
-// completion for courses lesson or quiz & cases
+router.get("/packages/packageId/exams/:examId", protectedAccess("packageId"));
+
+// progress
+
 router.post(
-  "/progress/courses/:courseId/lesson/:lessonId",
+  "/progress/courses/:courseId/lessons/:lessonId",
   protectedAccess("courseId"),
-  lqProgress.toggleProgress
+  CourseProgress.addCourseProgress
+);
+router.delete(
+  "/progress/courses/:courseId/lessons/:lessonId",
+  protectedAccess("courseId"),
+  CourseProgress.deleteCourseProgress
 );
 
-//case
 router.post(
   "/progress/courses/:courseId/cases/:caseId",
   protectedAccess("courseId"),
-  casesPg.toggleCaseProgress
+  CourseProgress.addCaseProgress
 );
 
 // completion for exams

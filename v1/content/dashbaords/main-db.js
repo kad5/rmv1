@@ -102,7 +102,7 @@ const getCourseProgress = async (profileId, courseIds) => {
       where: {
         profileId,
         courseId: { in: courseIds },
-        completed: true,
+        //completed: true,
       },
       select: {
         courseId: true,

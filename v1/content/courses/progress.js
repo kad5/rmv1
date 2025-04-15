@@ -1,71 +1,56 @@
 const { prisma } = require("../../config/prisma");
 const asyncHandler = require("express-async-handler");
 
-const toggleProgress = asyncHandler(async (req, res) => {
-  const userId = req.user.id;
-  const { courseId, lessonId } = req.params; // From route params
-  const type = "LESSON";
-
-  // Input validation
-  if (!courseId || !lessonId) {
-    return res.status(400).json({ message: "Missing courseId or lessonId" });
-  }
-
-  // Fetch progressId
-  const progress = await prisma.progress.findUnique({
-    where: { userId },
-    select: { id: true },
-  });
-  if (!progress) {
-    return res.status(404).json({ message: "User progress not found" });
-  }
-  const progressId = progress.id;
-
-  // Check current state
-  const existingProgress = await prisma.lessonProgress.findUnique({
+const addCourseProgress = asyncHandler(async (req, res) => {
+  const profileId = req.user.profileId;
+  const { courseId, lessonId } = req.params;
+  const added = await prisma.courseProgress.upsert({
     where: {
-      progressId_courseId_lessonId_type: {
-        progressId,
+      profileId_courseId_courseContnetId: {
+        profileId,
         courseId,
-        lessonId,
-        type,
+        courseContnetId: lessonId,
       },
     },
-    select: { completed: true }, // Only need completed field
+    update: {},
+    create: { profileId, courseId, courseContnetId: lessonId },
   });
-
-  const newCompleted = existingProgress ? !existingProgress.completed : true;
-  const completedAt = newCompleted ? new Date() : null;
-
-  // Upsert to toggle
-  const updatedProgress = await prisma.lessonProgress.upsert({
-    where: {
-      progressId_courseId_lessonId_type: {
-        progressId,
-        courseId,
-        lessonId,
-        type,
-      },
-    },
-    update: {
-      completed: newCompleted,
-      completedAt,
-    },
-    create: {
-      progressId,
-      courseId,
-      lessonId,
-      type,
-      completed: true,
-      completedAt: new Date(),
-    },
-  });
-
-  res.status(200).json({
-    success: true,
-    data: updatedProgress,
-    message: `Lesson marked as ${newCompleted ? "completed" : "incomplete"}`,
-  });
+  if (!added) throw new Error("Unable to update progress at the moment");
+  return res.status(200).json({ message: "Marked as completed" });
 });
 
-module.exports = { toggleProgress };
+const deleteCourseProgress = asyncHandler(async (req, res) => {
+  const profileId = req.user.profileId;
+  const { courseId, lessonId } = req.params;
+  const deleted = await prisma.courseProgress.deleteMany({
+    where: {
+      profileId,
+      courseId,
+      courseContnetId: lessonId,
+    },
+  });
+  if (deleted.count === 0) {
+    return res.status(404).json({ message: "No progress found to delete" });
+  }
+  return res.status(200).json({ message: "Marked as incomplete" });
+});
+
+const addCaseProgress = asyncHandler(async (req, res) => {
+  const profileId = req.user.profileId;
+  const { courseId, caseId } = req.params;
+  const added = await prisma.caseProgress.upsert({
+    where: {
+      profileId_courseId_caseId: {
+        profileId,
+        courseId,
+        caseId: caseId,
+      },
+    },
+    update: {},
+    create: { profileId, courseId, caseId: caseId },
+  });
+  if (!added) throw new Error("Unable to update progress at the moment");
+  return res.status(200).json({ message: "Success" });
+});
+
+module.exports = { addCourseProgress, deleteCourseProgress, addCaseProgress };

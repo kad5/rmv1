@@ -4,13 +4,13 @@ const { prisma } = require("../../config/prisma");
 const createNote = async (req, res) => {
   try {
     const { providerId, targetId, content, type } = req.body;
-    const userId = req.user.id;
+    const { profileId } = req.user;
 
     const note = await prisma.note.create({
-      data: { userId, providerId, targetId, content, type },
+      data: { profileId, providerId, targetId, content },
     });
 
-    res.status(201).json(note);
+    res.status(201).json({ message: "Your note has been added" });
   } catch (error) {
     res
       .status(500)

@@ -1,52 +1,30 @@
 const { prisma } = require("../../config/prisma");
 const asyncHandler = require("express-async-handler");
-// create or update feedback
-const upsertFeedback = async (req, res) => {
-  try {
-    const { targetId, targetType, evaluation } = req.body;
-    const userId = req.user.id;
 
-    if (!targetId || !targetType || evaluation < 1 || evaluation > 5) {
-      return res.status(400).json({ message: "Invalid input data" });
-    }
+const addFeedback = asyncHandler(async (req, res) => {
+  const { profileId } = req.user;
+  const { targetId, targetType, evaluation } = req.body;
 
-    // Upsert: Update if exists, create if not
-    const feedback = await prisma.feedback.upsert({
-      where: { userId_targetId_targetType: { userId, targetId, targetType } }, // Unique constraint
-      update: { evaluation },
-      create: { userId, targetId, targetType, evaluation },
-    });
-
-    res.json(feedback);
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error saving feedback", error: error.message });
-  }
-};
-
-// load specific feedback
-const getFeedback = asyncHandler(async (req, res) => {
-  const { targetId } = req.params;
-  const targetType = req.query.type;
-  const userId = req.user.id;
-
-  if (!targetType) {
-    return res
-      .status(400)
-      .json({ message: "Missing targetType query parameter." });
-  }
-
-  const validTypes = ["LESSON", "QUIZ" /* add others */];
+  const validTypes = ["COURSE_CONTENT", "EXAM"];
   if (!validTypes.includes(targetType)) {
-    return res.status(400).json({ message: "Invalid targetType." });
+    return res.status(400).json({ message: "Invalid data, please try again" });
+  }
+  const evalNum = Number(evaluation);
+  if (!targetId || !targetType || evalNum < 1 || evalNum > 5) {
+    return res.status(400).json({ message: "Invalid data, please try again" });
   }
 
-  const feedback = await prisma.feedback.findUnique({
-    where: { userId_targetId_targetType: { userId, targetId, targetType } },
+  const added = await prisma.feedback.upsert({
+    where: {
+      profileId_targetId_targetType: { profileId, targetId, targetType },
+    },
+    update: { evaluation: evalNum },
+    create: { profileId, targetId, targetType, evaluation: evalNum },
   });
-
-  res.status(200).json({ success: true, data: feedback || null });
+  if (!added) throw new Error("Unable to do this at the moment");
+  return res.status(200).json({ message: "Thank you for your feedback 😊" });
 });
 
-module.exports = { getFeedback, upsertFeedback };
+//average feeback per item later
+
+module.exports = { addFeedback };
