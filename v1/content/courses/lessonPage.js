@@ -25,7 +25,7 @@ const getLessonPageData = async (profileId, courseId, lessonId) => {
     await Promise.all([
       prisma.courseProgress.findUnique({
         where: {
-          profileId_courseId_lessonId: {
+          profileId_courseId_courseContnetId: {
             profileId,
             courseId,
             courseContnetId: lessonId,
