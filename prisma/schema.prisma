@@ -139,7 +139,6 @@ model Favorite {
   profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@unique([profileId, type, targetId]) // ensures one favorite per item per user
-  @@index([profileId, type, targetId]) // for lesson page
   @@index([profileId, providerId]) // indexes all the stuff from a course or an exam bank page
   @@index([profileId, providerId, type]) // only needed for  cards/ cases of same course
 }
