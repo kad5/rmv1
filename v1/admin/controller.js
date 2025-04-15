@@ -83,6 +83,11 @@ const adminController = {
       : res.status(404).json({ message: "Subscription not found" });
   }),
 
+  createSubscription: asyncHandler(async (req, res) => {
+    const newSub = await adminQueries.createSubscription(req.body);
+    res.status(201).json(newSub);
+  }),
+
   updateSubscription: asyncHandler(async (req, res) => {
     const updatedSubscription = await adminQueries.updateSubscription(
       req.params.id,

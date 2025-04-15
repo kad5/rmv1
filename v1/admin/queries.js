@@ -18,6 +18,7 @@ const adminQueries = {
     prisma.subscription.findMany({ where: { userId } }),
   getSubscriptionById: (id) =>
     prisma.subscription.findUnique({ where: { id } }),
+  createSubscription: (data) => prisma.subscription.create({ data }),
   updateSubscription: (id, data) =>
     prisma.subscription.update({ where: { id }, data }),
 };

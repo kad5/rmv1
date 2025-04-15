@@ -22,6 +22,7 @@ router.put("/packages/:id", adminController.updatePackage);
 router.delete("/packages/:id", adminController.deletePackage);
 //subscriptions crud
 router.get("/subscriptions", adminController.getAllSubscriptions);
+router.post("/subscriptions", adminController.createSubscription);
 router.get("/subscriptions/:id", adminController.getSubscriptionById);
 router.put("/subscriptions/:id", adminController.updateSubscription);
 
