@@ -17,7 +17,7 @@ router.get("/dashboard/main", maindb.mainDashboardData);
 
 // courses
 router.get(
-  "/dashboard/courses/:courseId",
+  "/courses/:courseId",
   protectedAccess("courseId"),
   coursedb.getCourseDb
 );
@@ -29,9 +29,9 @@ router.get(
 );
 
 // exams
-router.get("/dashboard/packages/:packageId", protectedAccess("packageId"));
+router.get("/packages/:packageId", protectedAccess("packageId"));
 
-router.get("/packages/packageId/exams/:examId", protectedAccess("packageId"));
+router.get("/packages/:packageId/exams/:examId", protectedAccess("packageId"));
 
 // progress
 

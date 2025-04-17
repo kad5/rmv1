@@ -2,6 +2,13 @@ const { prisma } = require("../config/prisma");
 const asyncHandler = require("express-async-handler");
 
 const createCase = asyncHandler(async (req, res) => {
+  const data = req.body;
+  const c = await prisma.case.create({ data });
+  if (c) return res.status(200).json(c);
+});
+
+/*
+const createCase = asyncHandler(async (req, res) => {
   const {
     cardId,
     order,
@@ -49,7 +56,7 @@ const createCase = asyncHandler(async (req, res) => {
 
   res.status(201).json({ success: true, data: newCase });
 });
-
+*/
 const updateCase = asyncHandler(async (req, res) => {
   const { caseId } = req.params;
   const {

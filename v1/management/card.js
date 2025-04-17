@@ -2,6 +2,13 @@ const { prisma } = require("../config/prisma");
 const asyncHandler = require("express-async-handler");
 
 const createCard = asyncHandler(async (req, res) => {
+  const data = req.body;
+  const card = await prisma.card.create({ data });
+  if (card) return res.status(200).json(card);
+});
+
+/*
+const createCard = asyncHandler(async (req, res) => {
   const { lessonId, type, order, module, title, content } = req.body;
 
   // Validation
@@ -37,7 +44,7 @@ const createCard = asyncHandler(async (req, res) => {
 
   res.status(201).json({ success: true, data: card });
 });
-
+*/
 const updateCard = asyncHandler(async (req, res) => {
   const { cardId } = req.params;
   const { lessonId, type, order, module, title, content } = req.body;
